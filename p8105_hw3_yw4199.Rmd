@@ -39,11 +39,103 @@ instacart |>
 ```
 
 Make a table showing the three most popular items in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”. Include the number of times each item is ordered in your table.
-```{r}
 
-```
 
 Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
 
+## Problem 2
+
+```{r}
+library(p8105.datasets)
+data("brfss_smart2010")
+```
+
+First, do some data cleaning:
+format the data to use appropriate variable names;
+focus on the “Overall Health” topic 
+include only responses from “Excellent” to “Poor”
+organize responses as a factor taking levels ordered from “Poor” to “Excellent”
+```{r}
+brfss_df = 
+  brfss_smart2010 |> 
+  janitor::clean_names() |> 
+  rename(state = locationabbr, location = locationdesc) |> 
+  filter(topic == "Overall Health", 
+         response %in% c("Poor", "Fair", "Good", "Very good", "Excellent")) |> 
+  mutate(response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent"), ordered = TRUE)) 
+```
+
+Using this dataset, do or answer the following (commenting on the results of each):
+
+In 2002, which states were observed at 7 or more locations? What about in 2010?
+```{r}
+brfss_df |> 
+  filter(year == 2002) |> 
+  group_by(state) |> 
+  summarise(obs = n_distinct(location)) |> 
+  filter(obs >= 7)
+```
+
+```{r}
+brfss_df |> 
+  filter(year == 2010) |> 
+  group_by(state) |> 
+  summarise(obs = n_distinct(location)) |> 
+  filter(obs >= 7)
+```
+
+Construct a dataset that is limited to Excellent responses, and contains, year, state, and a variable that averages the data_value across locations within a state. 
+
+
+```{r}
+brfss_df_new = 
+  brfss_df |> 
+  filter(response == "Excellent") |> 
+  group_by(year, state) |> 
+  mutate(average_data_value = mean(data_value)) |> 
+  select(year, state, location, average_data_value)
+```
+
+Make a “spaghetti” plot of this average value over time within a state (that is, make a plot showing a line for each state across years – the geom_line geometry and group aesthetic will help).
+
+```{r}
+brfss_df_new |> 
+  ggplot(aes(x = year, y = average_data_value, group = state))+
+  geom_line(aes(color = state))+
+  labs(
+    title = "Average Value Over Time Within Each State",
+    x = "Year",
+    y = "Average Value"
+  ) +
+  theme_minimal()
+```
+
+Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
+
+```{r}
+brfss_df |> 
+  filter(year %in% c(2006, 2010), state == "NY") |> 
+  ggplot(aes(x = response, y = data_value, fill = response)) + 
+  geom_boxplot() +
+  facet_grid(. ~ year)+
+  theme(legend.position = "none")+
+  labs(
+    title = "Distribution of Data Value in NY State (2006 & 2010)",
+    x = "Response",
+    y = "data value"
+  )+
+  theme_minimal()
+
+```
+
+## Problem 3
+
+Load, tidy, merge, and otherwise organize the data sets. Your final dataset should include all originally observed variables; exclude participants less than 21 years of age, and those with missing demographic data; and encode data with reasonable variable classes (i.e. not numeric, and using factors with the ordering of tables and plots in mind).
+
+Produce a reader-friendly table for the number of men and women in each education category, and create a visualization of the age distributions for men and women in each education category. Comment on these items.
+
+Traditional analyses of accelerometer data focus on the total activity over the day. Using your tidied dataset, aggregate across minutes to create a total activity variable for each participant. Plot these total activities (y-axis) against age (x-axis); your plot should compare men to women and have separate panels for each education level. Include a trend line or a smooth to illustrate differences. Comment on your plot.
+
+Accelerometer data allows the inspection activity over the course of the day. Make a three-panel plot that shows the 24-hour activity time courses for each education level and use color to indicate sex. Describe in words any patterns or conclusions you can make based on this graph; including smooth trends may help identify differences.
 
 
